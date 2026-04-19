@@ -13,7 +13,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         fields = ('email', 'password')
 
     def create(self, validated_data):
-        user = User.objects.create_user(validated_data)
+        user = User.objects.create_user(**validated_data)
         user.set_otp()  
         return user
 
