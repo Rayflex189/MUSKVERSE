@@ -1,8 +1,3 @@
-Here are a few strong GitHub description options for your Musk Verse project—pick the tone you want 👇
-
-
----
-
 🔹 Clean & Professional
 
 Musk Verse is a full-stack Django web application that enables users to securely register, verify accounts via email OTP, complete profiles, and access a dynamic marketplace to purchase cars, fan cards, memberships, stocks, crypto fractions, and investment plans. Built with Django REST Framework, Tailwind CSS, and Cloudinary integration for scalable media handling.
