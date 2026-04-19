@@ -1,12 +1,16 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import *
-from rest_framework_simplejwt.views import TokenRefreshView
+
+router = DefaultRouter()
+router.register(r'api-keys', APIKeyViewSet)
+router.register(r'webhooks', WebhookViewSet)
 
 urlpatterns = [
+    path('', include(router.urls)),
     path('auth/register/', RegisterView.as_view()),
     path('auth/verify-otp/', VerifyOTPView.as_view()),
     path('auth/login/', LoginView.as_view()),
-    path('auth/refresh/', TokenRefreshView.as_view()),
     path('profile/', ProfileView.as_view()),
     path('cars/', CarListView.as_view()),
     path('fancards/', FanCardListView.as_view()),
@@ -16,4 +20,10 @@ urlpatterns = [
     path('investments/', InvestmentPlanListView.as_view()),
     path('purchase/', PurchaseView.as_view()),
     path('transactions/', UserTransactionListView.as_view()),
+    
+    # API Management Endpoints (Admin only)
+    path('admin/api-keys/', APIKeyListCreateView.as_view()),
+    path('admin/api-keys/<int:pk>/', APIKeyDetailView.as_view()),
+    path('admin/api-usage/', APIUsageStatsView.as_view()),
+    path('admin/api-rate-limits/', APIRateLimitView.as_view()),
 ]
