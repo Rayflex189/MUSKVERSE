@@ -2,12 +2,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import *
 
-router = DefaultRouter()
-router.register(r'api-keys', APIKeyViewSet)
-router.register(r'webhooks', WebhookViewSet)
+#router = DefaultRouter()
+#router.register(r'api-keys', APIKeyViewSet)
+#router.register(r'webhooks', WebhookViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    #path('', include(router.urls)),
     path('auth/register/', RegisterView.as_view()),
     path('auth/verify-otp/', VerifyOTPView.as_view()),
     path('auth/login/', LoginView.as_view()),

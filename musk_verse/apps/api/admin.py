@@ -4,10 +4,6 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 from .models import APIKey, APIUsageLog, APIRateLimit, APIWebhook
-from .serializers import APIKeySerializer
-
-# Create these models in apps/api/models.py first
-# I'll include the model definitions below
 
 @admin.register(APIKey)
 class APIKeyAdmin(admin.ModelAdmin):
@@ -169,8 +165,10 @@ class APIUsageLogAdmin(admin.ModelAdmin):
     def status_code_badge(self, obj):
         if 200 <= obj.status_code < 300:
             bg = '#28a745'
+            text_color = 'white'
         elif 300 <= obj.status_code < 400:
             bg = '#17a2b8'
+            text_color = 'white'
         elif 400 <= obj.status_code < 500:
             bg = '#ffc107'
             text_color = 'black'
@@ -182,7 +180,7 @@ class APIUsageLogAdmin(admin.ModelAdmin):
             text_color = 'white'
         
         return format_html('<span style="background-color: {}; padding: 2px 8px; border-radius: 4px; color: {}; font-weight: bold;">{}</span>', 
-                          bg, text_color if 'text_color' in locals() else 'white', obj.status_code)
+                          bg, text_color, obj.status_code)
     status_code_badge.short_description = 'Status'
     
     def response_time_display(self, obj):
@@ -424,30 +422,3 @@ class APIWebhookAdmin(admin.ModelAdmin):
         queryset.update(status='inactive')
         self.message_user(request, f"Disabled {queryset.count()} webhooks.")
     disable_webhooks.short_description = "Disable selected webhooks"
-
-# Dashboard Widget for API Analytics
-class APIAnalyticsDashboard(admin.ModelAdmin):
-    change_list_template = 'admin/api_analytics_dashboard.html'
-    
-    def changelist_view(self, request, extra_context=None):
-        from django.db.models import Count, Avg, Sum
-        from datetime import datetime, timedelta
-        
-        last_24h = timezone.now() - timedelta(hours=24)
-        last_7d = timezone.now() - timedelta(days=7)
-        
-        extra_context = extra_context or {}
-        extra_context.update({
-            'total_requests': APIUsageLog.objects.count(),
-            'requests_last_24h': APIUsageLog.objects.filter(timestamp__gte=last_24h).count(),
-            'avg_response_time': APIUsageLog.objects.aggregate(Avg('response_time'))['response_time__avg'],
-            'error_rate': APIUsageLog.objects.filter(status_code__gte=400).count() / max(APIUsageLog.objects.count(), 1) * 100,
-            'top_endpoints': APIUsageLog.objects.values('endpoint').annotate(count=Count('id')).order_by('-count')[:10],
-            'active_keys': APIKey.objects.filter(status='active').count(),
-            'total_keys': APIKey.objects.count(),
-            'recent_logs': APIUsageLog.objects.order_by('-timestamp')[:50],
-        })
-        return super().changelist_view(request, extra_context=extra_context)
-
-# Register the analytics dashboard
-admin.site.register_view('api-analytics', view=APIAnalyticsDashboard, name='API Analytics')

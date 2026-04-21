@@ -34,6 +34,8 @@ class APIKey(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+        app_label = 'api'
+
 
 class APIUsageLog(models.Model):
     api_key = models.ForeignKey(APIKey, on_delete=models.SET_NULL, null=True)
@@ -55,6 +57,8 @@ class APIUsageLog(models.Model):
             models.Index(fields=['api_key', 'timestamp']),
             models.Index(fields=['status_code']),
         ]
+        app_label = 'api'
+
     
     def __str__(self):
         return f"{self.method} {self.endpoint} - {self.status_code} ({self.response_time}ms)"
@@ -71,6 +75,8 @@ class APIRateLimit(models.Model):
     
     class Meta:
         unique_together = ['api_key', 'endpoint_pattern', 'method']
+        app_label = 'api'
+
     
     def __str__(self):
         key_name = self.api_key.name if self.api_key else "Global"
@@ -101,3 +107,7 @@ class APIWebhook(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.event_type}"
+
+    class Meta:
+        app_label = 'api'
+

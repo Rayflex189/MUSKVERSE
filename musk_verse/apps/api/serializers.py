@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from apps.accounts.models import Profile
 from apps.products.models import Car, FanCard, MembershipCard, Stock, CryptoAsset, InvestmentPlan
 from apps.transactions.models import Transaction
+# Add these imports at the top
+from .models import APIKey, APIUsageLog, APIRateLimit
 
 User = get_user_model()
 
@@ -37,6 +39,12 @@ class FanCardSerializer(serializers.ModelSerializer):
         model = FanCard
         fields = '__all__'
 
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'
+
 class MembershipCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = MembershipCard
@@ -61,3 +69,26 @@ class PurchaseSerializer(serializers.Serializer):
     product_type = serializers.ChoiceField(choices=Transaction.PRODUCT_TYPES)
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField(default=1)  # for stocks/crypto fractional
+
+
+
+# Add these serializer classes
+class APIKeySerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = APIKey
+        fields = '__all__'
+        read_only_fields = ('key', 'created_at', 'last_used')
+
+class APIUsageLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = APIUsageLog
+        fields = '__all__'
+
+class APIRateLimitSerializer(serializers.ModelSerializer):
+    api_key_name = serializers.CharField(source='api_key.name', read_only=True)
+    
+    class Meta:
+        model = APIRateLimit
+        fields = '__all__'

@@ -6,19 +6,6 @@ import string
 
 from cloudinary.models import CloudinaryField
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    full_name = models.CharField(max_length=150)
-    profile_image = CloudinaryField('image', blank=True, null=True)
-    phone = models.CharField(max_length=20)
-    address = models.TextField()
-    country = models.CharField(max_length=100)
-    currency = models.CharField(max_length=10)
-    date_of_birth = models.DateField()
-
-    def __str__(self):
-        return self.full_name
-
 def generate_otp():
     return ''.join(random.choices(string.digits, k=6))
 
@@ -71,3 +58,18 @@ class User(AbstractBaseUser, PermissionsMixin):
                 self.save(update_fields=['is_verified', 'otp_code'])
                 return True
         return False
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    full_name = models.CharField(max_length=150)
+    profile_image = CloudinaryField('image', blank=True, null=True)
+    phone = models.CharField(max_length=20)
+    address = models.TextField()
+    country = models.CharField(max_length=100)
+    currency = models.CharField(max_length=10)
+    date_of_birth = models.DateField()
+
+    def __str__(self):
+        return self.full_name
+

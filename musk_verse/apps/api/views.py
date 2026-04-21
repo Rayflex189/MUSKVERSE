@@ -6,8 +6,94 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from .serializers import *
 from apps.accounts.models import User, Profile
+from rest_framework.permissions import IsAdminUser
+from rest_framework.views import APIView
+from .models import APIKey, APIUsageLog, APIRateLimit
+from .serializers import APIKeySerializer, APIUsageLogSerializer, APIRateLimitSerializer
+from django.db.models import Count, Avg, Sum
+from datetime import datetime, timedelta
 from apps.transactions.models import Transaction
+from django.utils import timezone
 from apps.products.models import Car, FanCard, MembershipCard, Stock, CryptoAsset, InvestmentPlan
+
+# ========== Admin API Management Views ==========
+
+class APIKeyListCreateView(generics.ListCreateAPIView):
+    """List all API keys or create a new one (Admin only)"""
+    permission_classes = [IsAdminUser]
+    serializer_class = APIKeySerializer
+    queryset = APIKey.objects.all().select_related('user')
+
+class APIKeyDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update or delete an API key (Admin only)"""
+    permission_classes = [IsAdminUser]
+    serializer_class = APIKeySerializer
+    queryset = APIKey.objects.all()
+
+class APIUsageStatsView(APIView):
+    """Get API usage statistics (Admin only)"""
+    permission_classes = [IsAdminUser]
+    
+    def get(self, request):
+        # Time filters
+        now = timezone.now()
+        last_24h = now - timedelta(hours=24)
+        last_7d = now - timedelta(days=7)
+        
+        stats = {
+            'total_requests': APIUsageLog.objects.count(),
+            'requests_last_24h': APIUsageLog.objects.filter(timestamp__gte=last_24h).count(),
+            'requests_last_7d': APIUsageLog.objects.filter(timestamp__gte=last_7d).count(),
+            'avg_response_time_ms': APIUsageLog.objects.aggregate(Avg('response_time'))['response_time__avg'],
+            'error_rate': (
+                APIUsageLog.objects.filter(status_code__gte=400).count() / 
+                max(APIUsageLog.objects.count(), 1) * 100
+            ),
+            'top_endpoints': list(
+                APIUsageLog.objects.values('endpoint')
+                .annotate(count=Count('id'))
+                .order_by('-count')[:10]
+            ),
+            'status_code_breakdown': list(
+                APIUsageLog.objects.values('status_code')
+                .annotate(count=Count('id'))
+                .order_by('-count')
+            ),
+        }
+        return Response(stats)
+
+class APIRateLimitView(generics.ListCreateAPIView):
+    """List or create rate limit rules (Admin only)"""
+    permission_classes = [IsAdminUser]
+    serializer_class = APIRateLimitSerializer
+    queryset = APIRateLimit.objects.all().select_related('api_key')
+
+class FanCardListView(generics.ListAPIView):
+    queryset = FanCard.objects.all()
+    serializer_class = FanCardSerializer
+
+class MembershipCardListView(generics.ListAPIView):
+    queryset = MembershipCard.objects.all()
+    serializer_class = MembershipCardSerializer
+
+class StockListView(generics.ListAPIView):
+    queryset = Stock.objects.filter(available_quantity__gt=0)
+    serializer_class = StockSerializer
+
+class CryptoListView(generics.ListAPIView):
+    queryset = CryptoAsset.objects.all()
+    serializer_class = CryptoSerializer
+
+class InvestmentPlanListView(generics.ListAPIView):
+    queryset = InvestmentPlan.objects.all()
+    serializer_class = InvestmentPlanSerializer
+
+class UserTransactionListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TransactionSerializer  # You'll need to create this serializer
+    
+    def get_queryset(self):
+        return Transaction.objects.filter(user=self.request.user).order_by('-created_at')
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
